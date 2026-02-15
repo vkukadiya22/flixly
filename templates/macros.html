@@ -1,0 +1,419 @@
+{% macro movie_card(item, show_rating=False, extra_class='', is_watchlist_page=False) %}
+<div class="movie-card {{ extra_class }}"
+    data-type="{{ item.content_type or item.type or ('series' if item.season_count is defined or item.item_type == 'series' else 'movie') }}"
+    data-id="{{ item.id or item.item_id }}" data-title="{{ item.title }}" data-genre="{{ item.genre }}"
+    data-trailer="{{ item.trailer }}" data-poster="{{ url_for('stream_image', filename=item.poster) }}">
+    <div class="card-inner">
+        <div class="card-poster">
+            <img class="poster-vertical" src="{{ url_for('stream_image', filename=(item.poster_v or '')) }}">
+            <img class="poster-horizontal" src="{{ url_for('stream_image', filename=item.poster) }}">
+        </div>
+        <div class="card-info">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="card-actions-left">
+                    {% set ctype = item.content_type or item.type or item.item_type or ('series' if item.season_count is
+                    defined else 'movie') %}
+                    {% set cid = item.id or item.item_id %}
+                    <a class="btn btn-sm btn-warning play-btn" title="Play"
+                        href="{{ '/watch/series/' ~ cid if ctype == 'series' else '/watch/' ~ cid }}">
+                        <i class="bi bi-play-fill"></i>
+                    </a>
+                    {% if is_watchlist_page %}
+                    <button class="btn btn-sm btn-outline-light watchlist-remove active" title="Remove from Watchlist"
+                        data-type="{{ ctype }}" data-id="{{ cid }}">
+                        <i class="bi bi-check-circle"></i>
+                    </button>
+                    {% else %}
+                    <button class="btn btn-sm btn-outline-light add-watchlist" title="Add to Watchlist"
+                        data-type="{{ ctype }}" data-id="{{ cid }}">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-actions-right">
+                    <button class="btn btn-sm btn-outline-light expand-btn" title="More Info">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-meta-data">
+                {% if show_rating and item.rating %}
+                {% if item.season_count is defined and item.season_count %}
+                <span class="meta-line">{{ item.rating }} ★ • {{ item.season_count }} Seasons</span>
+                {% else %}
+                <span class="meta-line">{{ item.rating }} ★ • {{ item.runtime }}</span>
+                {% endif %}
+                {% elif item.season_count is defined and item.season_count %}
+                <span class="meta-line">{{ item.season_count }} Seasons • {{ item.age_rating }}</span>
+                {% else %}
+                <span class="meta-line">{{ item.runtime }} • {{ item.age_rating }}</span>
+                {% endif %}
+                <div class="genre-line">{{ item.genre }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro continue_watching_card(item) %}
+<div class="movie-card" data-type="{{ item.type }}" data-id="{{ item.id }}" data-title="{{ item.title }}"
+    data-poster="{{ url_for('stream_image', filename=(item.poster_v or '')) }}">
+    <div class="card-poster">
+        <img class="poster-vertical" src="{{ url_for('stream_image', filename=(item.poster_v or '')) }}">
+        <img class="poster-horizontal" src="{{ url_for('stream_image', filename=(item.poster or '')) }}">
+        <div style="position:absolute;bottom:0;left:0;width:100%;height:4px;background:#333;">
+            <div style="width:{{ (item.progress / item.duration * 100)|round }}%;height:100%;background:#ffb703;">
+            </div>
+        </div>
+    </div>
+    <div class="card-info">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <a href="{{ ('/watch/series/' ~ item.id ~ '?season=' ~ item.season ~ '&episode=' ~ item.ep_id) if item.type == 'series' else '/watch/' ~ item.id }}"
+                class="btn btn-sm btn-light rounded-circle play-btn"><i class="bi bi-play-fill text-dark"></i></a>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro navbar(active_page='home') %}
+<nav class="navbar navbar-expand-lg navbar-dark flixly-nav fixed-top">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+        <!-- 1. Toggle Button (Mobile Only) -->
+        <button class="navbar-toggler border-0 shadow-none d-lg-none" type="button" data-bs-toggle="collapse"
+            data-bs-target="#flixlyNavbar" aria-controls="flixlyNavbar" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <i class="bi bi-list text-white"></i>
+        </button>
+
+        <!-- 2. Logo -->
+        <a class="navbar-brand d-flex align-items-center me-auto ms-2 ms-lg-0" href="{{ url_for('home') }}">
+            <img src="{{ url_for('static', filename='images/flixly_logo.png') }}" height="45" class="me-2 flixly-logo">
+        </a>
+
+        <!-- 3. Search Box (Mobile Only) -->
+        <div class="nav-search-wrapper ms-2 order-lg-1 d-lg-none">
+            <i class="bi bi-search search-icon"></i>
+            <input type="search" class="search-slide-input" placeholder="Search movies, series" id="searchInputMobile">
+            <div id="searchResultsMobile" class="search-results"></div>
+        </div>
+
+        <!-- Sidebar / Collapsible Content -->
+        <div class="collapse navbar-collapse order-lg-2" id="flixlyNavbar">
+            <!-- Sidebar Header with Cancel Button (Mobile Only) -->
+            <div class="d-flex justify-content-between align-items-center d-lg-none mb-4 px-3 mt-2">
+                <img src="{{ url_for('static', filename='images/flixly_logo.png') }}" height="35">
+                <button class="btn btn-link text-white p-0 text-decoration-none" data-bs-toggle="collapse"
+                    data-bs-target="#flixlyNavbar">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <ul class="navbar-nav align-items-center ms-auto">
+                <li class="nav-item me-3 d-none d-lg-block">
+                    <div class="nav-search-wrapper">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="search" class="search-slide-input" placeholder="Search movies, series"
+                            id="searchInputDesktop">
+                        <div id="searchResultsDesktop" class="search-results"></div>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active_page == 'home' }}" href="{{ url_for('home') }}">
+                        <i class="bi bi-house-door me-1"></i> Home
+                    </a>
+                </li>
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link {{ 'active' if active_page == 'movies' }}" href="{{ url_for('movies_page') }}">
+                        <i class="bi bi-film me-1"></i> Movies
+                    </a>
+                </li>
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link {{ 'active' if active_page == 'series' }}" href="{{ url_for('series_page') }}">
+                        <i class="bi bi-collection-play me-1"></i> Series
+                    </a>
+                </li>
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link {{ 'active' if active_page == 'categories' }}"
+                        href="{{ url_for('categories_page') }}">
+                        <i class="bi bi-grid me-1"></i> Categories
+                    </a>
+                </li>
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link {{ 'active' if active_page == 'watchlist' }}"
+                        href="{{ url_for('watchlist_page') }}">
+                        <i class="bi bi-bookmark-heart me-1"></i> Watchlist
+                    </a>
+                </li>
+                {% if session.get('user_id') %}
+                <li class="nav-item ms-lg-3 dropdown profile-dropdown">
+                    <a class="nav-link d-flex align-items-center" href="#" id="navbarDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if session.get('user_photo') %}
+                        {% set u_photo = session.get('user_photo') %}
+                        {% if 'images/' in u_photo %}
+                        <div class="user-avatar-small me-2"
+                            style="background-image: url('{{ url_for('static', filename=u_photo) }}');"></div>
+                        {% elif 'profiles/' in u_photo and 'profile_photo' not in u_photo %}
+                        <div class="user-avatar-small me-2"
+                            style="background-image: url('{{ url_for('static', filename='images/' + u_photo) }}');">
+                        </div>
+                        {% elif 'profile_photo/' in u_photo %}
+                        <div class="user-avatar-small me-2"
+                            style="background-image: url('{{ url_for('static', filename=u_photo) }}');"></div>
+                        {% else %}
+                        <div class="user-avatar-small me-2"
+                            style="background-image: url('{{ url_for('static', filename='profile_photo/' + u_photo) }}');">
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="user-avatar-small me-2"
+                            style="background-image: url('{{ url_for('static', filename='images/default_avatar.png') }}');">
+                        </div>
+                        {% endif %}
+                        <span class="d-lg-none ms-2 text-white">{{ session.get('user_name', 'User') }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end glass-dropdown" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal"><i
+                                    class="bi bi-person me-2"></i> Profile</a></li>
+                        <li>
+                            <hr class="dropdown-divider bg-light opacity-25">
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i
+                                    class="bi bi-box-arrow-right me-2"></i>
+                                Logout</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link" href="{{ url_for('signin') }}">
+                        <i class="bi bi-person me-1"></i> Sign in
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endmacro %}
+
+{% macro profile_modals() %}
+<!-- Profile Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">Profile</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="profile-photo-container mb-3 position-relative mx-auto">
+                    {% set u_photo = session.get('user_photo') %}
+                    {% if u_photo %}
+                    {% if 'images/' in u_photo %}
+                    <img id="profilePhotoDisplay" src="{{ url_for('static', filename=u_photo) }}"
+                        class="rounded-circle profile-img-lg">
+                    {% elif 'profiles/' in u_photo and 'profile_photo' not in u_photo %}
+                    <img id="profilePhotoDisplay" src="{{ url_for('static', filename='images/' + u_photo) }}"
+                        class="rounded-circle profile-img-lg">
+                    {% elif 'profile_photo/' in u_photo %}
+                    <img id="profilePhotoDisplay" src="{{ url_for('static', filename=u_photo) }}"
+                        class="rounded-circle profile-img-lg">
+                    {% else %}
+                    <img id="profilePhotoDisplay" src="{{ url_for('static', filename='profile_photo/' + u_photo) }}"
+                        class="rounded-circle profile-img-lg">
+                    {% endif %}
+                    {% else %}
+                    <img id="profilePhotoDisplay" src="{{ url_for('static', filename='images/default_avatar.png') }}"
+                        class="rounded-circle profile-img-lg">
+                    {% endif %}
+                    <label class="photo-edit-overlay" style="cursor: pointer;" onclick="openAvatarSelectionModal()">
+                        <i class="bi bi-pencil-fill"></i>
+                    </label>
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label text-light">Name</label>
+                    <input type="text" id="profileNameInput" class="form-control glass-input"
+                        value="{{ session.get('user_name', '') }}">
+                </div>
+                <div class="mb-4 text-start">
+                    <label class="form-label text-light">Email</label>
+                    <input type="email" id="profileEmailDisplay" class="form-control glass-input" readonly
+                        value="{{ session.get('user_email', '') }}">
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-warning" onclick="saveProfileChanges()">Save Changes</button>
+                    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#changePasswordModal"
+                        data-bs-dismiss="modal">Change Password</button>
+                    <button class="btn btn-outline-danger" onclick="confirmDeleteAccount()">Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Selection Modal -->
+<div class="modal fade" id="avatarSelectionModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content glass-modal">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">Select Avatar</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="avatarGrid" class="d-flex flex-wrap gap-3 justify-content-center"
+                    style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-white">Loading avatars...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">Change Password</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    data-bs-target="#profileModal" data-bs-toggle="modal" aria-label="Back"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-light">New Password</label>
+                    <input type="password" id="newPassword" class="form-control glass-input">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-light">Confirm Password</label>
+                    <input type="password" id="confirmPassword" class="form-control glass-input">
+                </div>
+                <div class="d-grid">
+                    <button class="btn btn-primary" onclick="submitPasswordChange()">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function openAvatarSelectionModal() {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('profileModal')).hide();
+        new bootstrap.Modal(document.getElementById('avatarSelectionModal')).show();
+        const grid = document.getElementById('avatarGrid'); grid.innerHTML = '<p class="text-white">Loading...</p>';
+        fetch('/api/list_avatars').then(r => r.json()).then(imgs => {
+            grid.innerHTML = '';
+            imgs.forEach(img => {
+                const i = document.createElement('img'); i.src = `/static/profile_photo/${img}`;
+                i.className = 'rounded-circle border border-2 border-secondary m-1'; i.style.cssText = 'width:80px;height:80px;object-fit:cover;cursor:pointer;';
+                i.onclick = () => {
+                    const fd = new FormData(); fd.append("name", document.getElementById("profileNameInput").value); fd.append("selected_avatar", img);
+                    fetch("/api/update_profile", { method: "POST", body: fd }).then(r => r.json()).then(d => d.ok ? location.reload() : alert(d.error));
+                };
+                grid.appendChild(i);
+            });
+        });
+        document.getElementById('avatarSelectionModal').addEventListener('hidden.bs.modal', () => bootstrap.Modal.getOrCreateInstance(document.getElementById('profileModal')).show(), { once: true });
+    }
+</script>
+{% endmacro %}
+
+{% macro details_modal() %}
+<div class="modal fade details-modal" id="detailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <div class="details-media">
+                    <div id="detailsPoster" class="details-poster"></div>
+                    <video id="detailsVideo" playsinline></video>
+                    <button type="button" class="btn btn-dark btn-sm details-close" data-bs-dismiss="modal"><i
+                            class="bi bi-x-lg"></i></button>
+                    <button type="button" class="btn btn-dark btn-sm details-mute" id="detailsMuteBtn"><i
+                            class="bi bi-volume-up-fill"></i></button>
+                </div>
+                <div class="details-info p-3">
+                    <h4 id="detailsTitle"></h4>
+                    <div id="detailsMeta" class="movie-meta"></div>
+                    <p id="detailsDesc"></p>
+                    <div id="detailsExtra" class="mb-2"></div>
+                    <div id="detailsEpisodes"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const el = document.getElementById("detailsModal"); if (!el) return;
+        const modal = new bootstrap.Modal(el), poster = document.getElementById("detailsPoster"), video = document.getElementById("detailsVideo");
+        const title = document.getElementById("detailsTitle"), meta = document.getElementById("detailsMeta"), desc = document.getElementById("detailsDesc");
+        const extra = document.getElementById("detailsExtra"), eps = document.getElementById("detailsEpisodes"), muteBtn = document.getElementById("detailsMuteBtn");
+        const heroVideo = document.getElementById("heroVideo");
+
+        if (video) {
+            video.style.cursor = "pointer";
+            video.addEventListener("click", () => { if (video.dataset.playUrl) window.location.href = video.dataset.playUrl; });
+        }
+
+        document.querySelectorAll(".expand-btn").forEach(btn => {
+            btn.onclick = () => {
+                const card = btn.closest(".movie-card"), type = card.dataset.type, id = card.dataset.id;
+                title.textContent = card.dataset.title || ""; meta.textContent = card.dataset.genre || "";
+                desc.textContent = ""; extra.innerHTML = ""; eps.innerHTML = "";
+                poster.style.backgroundImage = `url('${card.dataset.poster}')`;
+                video.style.display = "none"; video.innerHTML = "";
+                modal.show();
+
+                const loadMedia = (vFile, playUrl) => {
+                    setTimeout(() => {
+                        if (vFile) {
+                            video.innerHTML = `<source src="/stream/video/${vFile}" type="video/mp4">`;
+                            video.load(); video.style.display = "block"; video.muted = false;
+                            video.dataset.playUrl = playUrl; video.play().catch(() => { });
+                            if (muteBtn) muteBtn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+                        }
+                    }, 1200);
+                };
+
+                const api = type === 'series' ? `/api/series/${id}` : `/api/movies/${id}`;
+                fetch(api).then(r => r.json()).then(info => {
+                    desc.textContent = info.description || "";
+                    meta.textContent = [info.genre, info.release_year, info.age_rating, info.runtime].filter(Boolean).join(" • ");
+                    if (type === 'movie') loadMedia(info.trailer, `/watch/${id}`);
+                });
+
+                if (type === 'series') {
+                    fetch(`/api/series/${id}/seasons`).then(r => r.json()).then(seasons => {
+                        extra.innerHTML = seasons.map(s => `<button class="btn btn-sm btn-outline-light me-2 season-chip" data-season="${s}">Season ${s}</button>`).join("");
+                        const loadEps = (s) => {
+                            fetch(`/api/series/${id}/episodes?season=${s}`).then(r => r.json()).then(data => {
+                                eps.innerHTML = `<div class="expand-episodes-list">${data.map(e => `<a class="expand-episode-item" href="/watch/series/${id}?season=${s}&episode=${e.id}"><div class="episode-number">${e.episode_number}</div><div class="episode-details"><div class="episode-head"><span class="episode-title">${e.title}</span><span class="episode-runtime">${e.runtime || ''}</span></div><p class="episode-desc">${e.description || ''}</p></div></a>`).join("")}</div>`;
+                                if (data[0]?.trailer) loadMedia(data[0].trailer, `/watch/series/${id}?season=${s}&episode=${data[0].id}`);
+                            });
+                        };
+                        if (seasons.length) {
+                            loadEps(seasons[0]);
+                            extra.querySelector('.season-chip')?.classList.add('active');
+                        }
+                        extra.onclick = e => {
+                            if (e.target.classList.contains('season-chip')) {
+                                extra.querySelectorAll('.season-chip').forEach(c => c.classList.remove('active'));
+                                e.target.classList.add('active'); loadEps(e.target.dataset.season);
+                            }
+                        };
+                    });
+                }
+            };
+        });
+
+        if (muteBtn) muteBtn.onclick = () => { video.muted = !video.muted; muteBtn.innerHTML = video.muted ? '<i class="bi bi-volume-mute-fill"></i>' : '<i class="bi bi-volume-up-fill"></i>'; };
+        el.addEventListener("show.bs.modal", () => heroVideo?.pause());
+        el.addEventListener("hidden.bs.modal", () => {
+            video.pause();
+            video.innerHTML = "";
+            video.style.display = "none";
+            if (window.innerWidth >= 992) heroVideo?.play();
+        });
+    });
+</script>
+{% endmacro %}

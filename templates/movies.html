@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Flixly - Movies</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    {% import 'macros.html' as macros %}
+
+    {{ macros.navbar('movies') }}
+    {{ macros.profile_modals() }}
+
+    <section class="hero-video">
+        <div id="posterOverlay" class="hero-poster" data-poster="{{ url_for('stream_image', filename=hero.poster) }}">
+        </div>
+
+        <video id="heroVideo" playsinline>
+            <source src="{{ url_for('stream_video', filename=hero.trailer) }}" type="video/mp4">
+        </video>
+
+        <div class="hero-overlay">
+            <div class="hero-info">
+                <h1>{{ hero.title }}</h1>
+
+                <div class="movie-meta">
+                    <span>{{ hero.release_year }}</span>
+                    {% if hero.age_rating %} • {{ hero.age_rating }}{% endif %}
+                    {% if hero.runtime %} • {{ hero.runtime }}{% endif %}
+                </div>
+
+                <p>{{ hero.description }}</p>
+                {% if hero.genre %} <div class="movie-meta"> {{ hero.genre }} </div> {% endif %}
+                <a href="/watch/{{ hero.id }}" id="playBtn" class="btn mt-3">
+                    <i class="bi bi-play-fill"></i> Play
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-controls">
+            <button id="muteBtn" class="btn btn-dark btn-sm">
+                <i class="bi bi-volume-mute-fill"></i>
+            </button>
+        </div>
+    </section>
+
+    {% if continue_watching %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">Continue Watching</h4>
+            <div class="movie-cards">
+                {% for item in continue_watching %}
+                {{ macros.continue_watching_card(item) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if new_releases %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">New on Flixly</h4>
+            <div class="movie-cards">
+                {% for item in new_releases %}
+                {{ macros.movie_card(item) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if top_picks %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">Today's Top Picks for You</h4>
+            <div class="movie-cards">
+                {% for item in top_picks %}
+                <div class="movie-card" data-type="movie" data-id="{{ item.id }}" data-title="{{ item.title }}"
+                    data-genre="{{ item.genre }}" data-trailer="{{ item.trailer }}"
+                    data-poster="{{ url_for('static', filename='images/' + item.poster) }}">
+                    <div class="card-inner">
+                        <div class="card-poster">
+                            <img class="poster-vertical"
+                                src="{{ url_for('static', filename='images/' + item.poster_v) }}">
+                            <img class="poster-horizontal"
+                                src="{{ url_for('static', filename='images/' + item.poster) }}">
+                        </div>
+                        <div class="card-info">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="card-actions-left">
+                                    <a class="btn btn-sm btn-warning play-btn" title="Play"
+                                        href="/watch/{{ item.id }}"><i class="bi bi-play-fill"></i></a>
+                                    <button class="btn btn-sm btn-outline-light add-watchlist" title="Add to Watchlist"
+                                        data-type="movie" data-id="{{ item.id }}"><i
+                                            class="bi bi-plus-circle"></i></button>
+                                </div>
+                                <div class="card-actions-right">
+                                    <button class="btn btn-sm btn-outline-light expand-btn" title="More Info"><i
+                                            class="bi bi-chevron-down"></i></button>
+                                </div>
+                            </div>
+                            <div class="card-meta-data">
+                                <span class="meta-line">{{ item.runtime }} • {{ item.age_rating }}</span>
+                                <div class="genre-line">{{ item.genre }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if high_rated_movies %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">High Rated</h4>
+            <div class="movie-cards">
+                {% for item in high_rated_movies %}
+                {{ macros.movie_card(item, show_rating=True) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if marvel_movies %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">Marvel Universe</h4>
+            <div class="movie-cards">
+                {% for item in marvel_movies %}
+                {{ macros.movie_card(item) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if horror_movies %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">Horror Collection</h4>
+            <div class="movie-cards">
+                {% for item in horror_movies %}
+                {{ macros.movie_card(item) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if anime_movies %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">Anime World</h4>
+            <div class="movie-cards">
+                {% for item in anime_movies %}
+                {{ macros.movie_card(item) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if action_movies %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">Action Hits</h4>
+            <div class="movie-cards">
+                {% for item in action_movies %}
+                {{ macros.movie_card(item) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if scifi_movies %}
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">Sci-Fi & Fantasy</h4>
+            <div class="movie-cards">
+                {% for item in scifi_movies %}
+                {{ macros.movie_card(item) }}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="card-layer">
+        <div class="movie-row">
+            <h4 class="row-title">All Movies</h4>
+            <div class="movie-cards">
+                {% for item in movies %}
+                <div class="movie-card" data-type="movie" data-id="{{ item.id }}" data-title="{{ item.title }}"
+                    data-genre="{{ item.genre }}" data-trailer="{{ item.trailer }}"
+                    data-poster="{{ url_for('stream_image', filename=item.poster) }}">
+                    <div class="card-inner">
+                        <div class="card-poster">
+                            <img class="poster-vertical" src="{{ url_for('stream_image', filename=item.poster_v) }}">
+                            <img class="poster-horizontal" src="{{ url_for('stream_image', filename=item.poster) }}">
+                        </div>
+
+                        <div class="card-info">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="card-actions-left">
+                                    <a class="btn btn-sm btn-warning play-btn" title="Play"
+                                        href="/watch/{{ item.id }}"><i class="bi bi-play-fill"></i></a>
+                                    <button class="btn btn-sm btn-outline-light add-watchlist" title="Add to Watchlist"
+                                        data-type="movie" data-id="{{ item.id }}"><i
+                                            class="bi bi-plus-circle"></i></button>
+                                </div>
+                                <div class="card-actions-right">
+                                    <button class="btn btn-sm btn-outline-light expand-btn" title="More Info"><i
+                                            class="bi bi-chevron-down"></i></button>
+                                </div>
+                            </div>
+                            <div class="card-meta-data">
+                                <span class="meta-line">{{ item.runtime }} • {{ item.age_rating }}</span>
+                                <div class="genre-line">{{ item.genre }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {{ macros.details_modal() }}
+
+    <section class="home-bg"></section>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll(".add-watchlist").forEach(btn => {
+                const type = btn.dataset.type, id = btn.dataset.id;
+                fetch(`/api/watchlist/status?item_type=${type}&item_id=${id}`).then(r => r.json()).then(st => {
+                    if (st.exists) { btn.classList.add("active"); btn.innerHTML = '<i class="bi bi-check-circle"></i>'; btn.title = "In Watchlist"; }
+                });
+            });
+
+            document.querySelectorAll(".add-watchlist").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const type = btn.dataset.type, id = btn.dataset.id;
+                    const form = new URLSearchParams(); form.append("item_type", type); form.append("item_id", id);
+                    fetch("/api/watchlist/add", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form.toString() }).then(res => {
+                        if (res.status === 401) { window.location.href = "/signin"; return; }
+                        if (btn.classList.contains("active")) {
+                            fetch("/api/watchlist/remove", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form.toString() }).then(() => {
+                                btn.classList.remove("active"); btn.innerHTML = '<i class="bi bi-plus-circle"></i>'; btn.title = "Add to Watchlist";
+                            });
+                        } else { btn.classList.add("active"); btn.innerHTML = '<i class="bi bi-check-circle"></i>'; btn.title = "In Watchlist"; }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

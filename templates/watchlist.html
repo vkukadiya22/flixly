@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Watchlist | Flixly</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+  {% import 'macros.html' as macros %}
+
+  {{ macros.navbar('watchlist') }}
+  {{ macros.profile_modals() }}
+
+  <div class="container-fluid" style="margin-top: 100px;">
+    <h3 class="row-title">Your Watchlist</h3>
+    <div class="watchlist-grid">
+      {% for item in items %}
+      {{ macros.movie_card(item, extra_class='grid-view', is_watchlist_page=True) }}
+      {% else %}
+      <div class="text-muted ps-5">Your watchlist is currently empty.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {{ macros.details_modal() }}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll(".watchlist-remove").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const type = btn.dataset.type, id = btn.dataset.id, form = new URLSearchParams();
+          form.append("item_type", type); form.append("item_id", id);
+          fetch("/api/watchlist/remove", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form.toString() }).then(() => {
+            const card = btn.closest(".movie-card");
+            if (card) {
+              card.style.transition = "all 0.4s ease"; card.style.transform = "scale(0)"; card.style.opacity = "0"; card.style.width = "0";
+              setTimeout(() => card.remove(), 400);
+            }
+          });
+        };
+      });
+    });
+  </script>
+</body>
+
+</html>
